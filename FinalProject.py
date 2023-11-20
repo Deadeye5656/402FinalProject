@@ -26,7 +26,7 @@ for foldIndex in range(0, 10):
             if i >= (foldIndex*10) and i < ((foldIndex+1)*10):
                 testList.append(celebrity[i])
             else:
-                img = cv2.imread(data_path + cate + '/' + img_name)
+                img = cv2.imread(celebrity[i])
                 if img is not None: 
                     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                     img_array = Image.fromarray(img, 'RGB')
