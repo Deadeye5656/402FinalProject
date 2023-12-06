@@ -82,7 +82,6 @@ for fold in range(FOLDTOTAL):
                 foldCount += 1
 
         print('Celebrity: ' + str(i) + ' finished')
-        #CHANGE
         if i == CELEBRITIESTOTAL-1:
             train_dataset = CelebrityFacesDataset(train_file_paths, train_labels, transform)
 
