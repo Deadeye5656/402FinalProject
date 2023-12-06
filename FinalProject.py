@@ -20,7 +20,7 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
-class CelebrityFacesDataset(Dataset):
+class FacesDataset(Dataset):
     def __init__(self, file_paths, labels, transform=None):
         self.file_paths = file_paths
         self.labels = labels
@@ -50,10 +50,8 @@ for root, dirs, files in os.walk(folder_path):
             celebrity.append(file_path)
         celebrities.append(celebrity)
 
-# FOLDTOTAL = 10
-# CELEBRITIESTOTAL = 17
-FOLDTOTAL = 4
-CELEBRITIESTOTAL = 3
+FOLDTOTAL = 10
+CELEBRITIESTOTAL = 17
 kf = KFold(n_splits=FOLDTOTAL)
 all_confusion_matrices = []
 all_accuracies = []
@@ -70,20 +68,19 @@ for fold in range(FOLDTOTAL):
     optimizer = optim.SGD(alexnet.parameters(), lr=0.001, momentum=0.9)
 
     for i, celebrity in enumerate(celebrities):
-        foldCount = 0
+        fold_count = 0
         for train_index, test_index in kf.split(celebrity):
-            if fold == foldCount:
+            if fold == fold_count:
                 test_file_paths.extend([celebrity[i] for i in test_index])
                 test_labels.extend([i for _ in test_index])
-                foldCount += 1
+                fold_count += 1
             else:
                 train_file_paths.extend([celebrity[i] for i in train_index])
                 train_labels.extend([i for _ in train_index])
-                foldCount += 1
+                fold_count += 1
 
-        print('Celebrity: ' + str(i) + ' finished')
         if i == CELEBRITIESTOTAL-1:
-            train_dataset = CelebrityFacesDataset(train_file_paths, train_labels, transform)
+            train_dataset = FacesDataset(train_file_paths, train_labels, transform)
 
             train_loader = DataLoader(train_dataset, batch_size=10, shuffle=True)
 
@@ -94,7 +91,7 @@ for fold in range(FOLDTOTAL):
                 loss.backward()
                 optimizer.step()
 
-            test_dataset = CelebrityFacesDataset(test_file_paths, test_labels, transform)
+            test_dataset = FacesDataset(test_file_paths, test_labels, transform)
 
             test_loader = DataLoader(test_dataset, batch_size=10, shuffle=False)
 
@@ -121,3 +118,42 @@ for fold in range(FOLDTOTAL):
 
 print('Overall accuracy of the network: %d %%' % (sum(all_accuracies) / len(all_accuracies)))
 print(np.sum(all_confusion_matrices, axis=0))
+
+# Fold: 1
+# Accuracy of the network on the test images: 91 %
+# Fold: 2
+# Accuracy of the network on the test images: 95 %
+# Fold: 3
+# Accuracy of the network on the test images: 96 %
+# Fold: 4
+# Accuracy of the network on the test images: 95 %
+# Fold: 5
+# Accuracy of the network on the test images: 97 %
+# Fold: 6
+# Accuracy of the network on the test images: 97 %
+# Fold: 7
+# Accuracy of the network on the test images: 96 %
+# Fold: 8
+# Accuracy of the network on the test images: 94 %
+# Fold: 9
+# Accuracy of the network on the test images: 95 %
+# Fold: 10
+# Accuracy of the network on the test images: 97 %
+# Overall accuracy of the network: 95 %
+# [[95  0  0  0  0  0  0  0  1  3  0  0  0  1  0  0  0]
+#  [ 0 91  0  2  0  0  1  2  0  1  1  1  0  0  1  0  0]
+#  [ 0  0 97  0  0  0  0  1  0  0  0  0  0  0  1  1  0]
+#  [ 0  2  0 87  0  1  0  2  0  0  0  6  0  0  1  1  0]
+#  [ 0  0  0  0 96  0  1  0  0  0  0  0  0  2  0  1  0]
+#  [ 0  2  0  0  0 97  0  0  0  0  0  1  0  0  0  0  0]
+#  [ 0  0  0  0  1  0 97  0  0  1  1  0  0  0  0  0  0]
+#  [ 0  1  0  2  1  0  0 93  0  0  0  0  0  0  3  0  0]
+#  [ 1  0  0  0  0  0  0  0 97  2  0  0  0  0  0  0  0]
+#  [ 1  0  0  0  0  0  0  0  1 96  1  0  0  0  1  0  0]
+#  [ 0  1  0  0  0  0  0  0  0  1 98  0  0  0  0  0  0]
+#  [ 0  0  0  0  0  0  0  0  0  0  0 99  0  1  0  0  0]
+#  [ 0  0  0  0  0  0  0  0  1  1  0  0 98  0  0  0  0]
+#  [ 0  0  0  0  1  0  1  0  0  0  1  1  0 96  0  0  0]
+#  [ 0  0  0  0  0  0  0  1  0  0  0  0  0  0 99  0  0]
+#  [ 0  0  0  1  0  0  0  0  0  0  0  0  0  0  1 96  2]
+#  [ 0  0  3  1  0  1  0  0  0  0  0  1  0  0  0  0 94]]
