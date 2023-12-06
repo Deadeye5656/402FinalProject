@@ -9,6 +9,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 import warnings
+import numpy as np
 
 warnings.filterwarnings("ignore")
 
@@ -49,19 +50,21 @@ for root, dirs, files in os.walk(folder_path):
             celebrity.append(file_path)
         celebrities.append(celebrity)
 
-#CHANGE
-kf = KFold(n_splits=4)
-
-#CHANGE
-for fold in range(4):
+# FOLDTOTAL = 10
+# CELEBRITIESTOTAL = 17
+FOLDTOTAL = 4
+CELEBRITIESTOTAL = 3
+kf = KFold(n_splits=FOLDTOTAL)
+all_confusion_matrices = []
+all_accuracies = []
+for fold in range(FOLDTOTAL):
     test_file_paths = []
     test_labels = []
     train_labels = []
     train_file_paths = []
     alexnet = models.alexnet(pretrained=True)
     num_ftrs = alexnet.classifier[6].in_features
-    # CHANGE
-    alexnet.classifier[6] = nn.Linear(num_ftrs, 3)  # 17 classes
+    alexnet.classifier[6] = nn.Linear(num_ftrs, CELEBRITIESTOTAL)  # 17 classes
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(alexnet.parameters(), lr=0.001, momentum=0.9)
@@ -80,13 +83,11 @@ for fold in range(4):
 
         print('Celebrity: ' + str(i) + ' finished')
         #CHANGE
-        if i == 2:
+        if i == CELEBRITIESTOTAL-1:
             train_dataset = CelebrityFacesDataset(train_file_paths, train_labels, transform)
 
             train_loader = DataLoader(train_dataset, batch_size=10, shuffle=True)
 
-            # Training
-            # for epoch in range(2):  # loop over the dataset multiple times
             for inputs, labels in train_loader:
                 optimizer.zero_grad()
                 outputs = alexnet(inputs)
@@ -98,7 +99,6 @@ for fold in range(4):
 
             test_loader = DataLoader(test_dataset, batch_size=10, shuffle=False)
 
-            # Testing
             correct = 0
             total = 0
             all_preds = []
@@ -111,8 +111,14 @@ for fold in range(4):
                     correct += (predicted == labels).sum().item()
                     all_preds.extend(predicted.numpy())
                     all_labels.extend(labels.numpy())
+
+            all_confusion_matrices.append(confusion_matrix(all_labels, all_preds))
+
             print('Fold: ' + str(fold+1))
 
             print('Accuracy of the network on the test images: %d %%' % (100 * correct / total))
 
-            print(confusion_matrix(all_labels, all_preds))
+            all_accuracies.append(100 * correct / total)
+
+print('Overall accuracy of the network: %d %%' % (sum(all_accuracies) / len(all_accuracies)))
+print(np.sum(all_confusion_matrices, axis=0))
